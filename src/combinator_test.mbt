@@ -42,3 +42,33 @@ test "many1 matches one" {
   assert_eq!(parsed.to_array(), ['a'])
   assert_eq!(rest.to_array(), ['b'])
 }
+
+test "choice matches first parser" {
+  let result = @parsem.parse(
+    @parsem.choice([@parsem.char('a'), @parsem.char('b')]),
+    "ab",
+  )
+  assert_true!(result._.is_ok())
+  let (parsed, rest) = result._.unwrap()
+  assert_eq!(parsed, 'a')
+  assert_eq!(rest.to_array(), ['b'])
+}
+
+test "choice matches second parser" {
+  let result = @parsem.parse(
+    @parsem.choice([@parsem.char('a'), @parsem.char('b')]),
+    "ba",
+  )
+  assert_true!(result._.is_ok())
+  let (parsed, rest) = result._.unwrap()
+  assert_eq!(parsed, 'b')
+  assert_eq!(rest.to_array(), ['a'])
+}
+
+test "choice returns the last error if no parses matched" {
+  let result = @parsem.parse(
+    @parsem.choice([@parsem.char('a'), @parsem.char('b')]),
+    "ccc",
+  )
+  inspect!(result, content="ParseResult(Err(Parse Error: expected 'b'))")
+}

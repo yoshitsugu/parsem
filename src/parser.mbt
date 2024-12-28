@@ -2,6 +2,8 @@
 type! ParseError {
   ParseCharError(expected~ : Char)
   ParseDigitError
+  NonEmptyArrayIsRequiredError
+  UnreachableError
 }
 
 ///|
@@ -10,6 +12,12 @@ pub impl Show for ParseError with output(self : ParseError, logger : &Logger) ->
     ParseCharError(expected~) =>
       logger.write_string("Parse Error: expected '\{expected}'")
     ParseDigitError => logger.write_string("Parse Error: expected digit")
+    NonEmptyArrayIsRequiredError =>
+      logger.write_string(
+        "Non empty array of parsers if required for choice combinator",
+      )
+    UnreachableError =>
+      logger.write_string("Unreachable Error. This occurs by parsem's bug.")
   }
 }
 
