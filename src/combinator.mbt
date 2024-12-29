@@ -119,8 +119,8 @@ pub fn sep_by1[T, U](
 }
 
 ///|
-/// Applies 2 parsers untile any parser fails.
-/// Returns the result of the last parsers.
+/// Applies two parsers sequentially until one of them fails.
+/// Returns the result of the last successful parser.
 pub fn then[T, U](self : Parser[T], next_parser : Parser[U]) -> Parser[U] {
   return Parser(fn(input : CList) -> ParseResult[U] {
     match parse(sequence(self, next_parser), input)._ {
@@ -131,8 +131,8 @@ pub fn then[T, U](self : Parser[T], next_parser : Parser[U]) -> Parser[U] {
 }
 
 ///|
-/// Applies 2 parsers untile any parser fails.
-/// Returns the result of the first(self) parsers.
+/// Applies two parsers sequentially until one of them fails.
+/// Returns the result of the first successful parser(self).
 pub fn precede[T, U](self : Parser[T], next_parser : Parser[U]) -> Parser[T] {
   return Parser(fn(input : CList) -> ParseResult[T] {
     match parse(sequence(self, next_parser), input)._ {
