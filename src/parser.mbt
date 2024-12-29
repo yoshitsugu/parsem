@@ -1,6 +1,7 @@
 ///|
 type! ParseError {
   ParseCharError(expected~ : Char)
+  ParseStringError(expected~ : String)
   ParseDigitError
   NonEmptyArrayIsRequiredError
   UnreachableError
@@ -11,6 +12,8 @@ pub impl Show for ParseError with output(self : ParseError, logger : &Logger) ->
   match self {
     ParseCharError(expected~) =>
       logger.write_string("Parse Error: expected '\{expected}'")
+    ParseStringError(expected~) =>
+      logger.write_string("Parse Error: expected \"\{expected}\"")
     ParseDigitError => logger.write_string("Parse Error: expected digit")
     NonEmptyArrayIsRequiredError =>
       logger.write_string(
@@ -74,12 +77,50 @@ pub fn digit() -> Parser[Char] {
   return Parser(fn(input : CList) -> ParseResult[Char] {
     match input.head() {
       Some(c) =>
-        if c >= '0' && c <= '9' {
+        if is_digit(c) {
           Ok((c, input.tail()))
         } else {
           Err(ParseDigitError)
         }
       None => Err(ParseDigitError)
+    }
+  })
+}
+
+///|
+/// Matches one string.
+/// Returns matched string.
+pub fn string(expected : String) -> Parser[String] {
+  return Parser(fn(input : CList) -> ParseResult[String] {
+    let str = @string.from_array(input.take(expected.length()).to_array())
+    if str == expected {
+      Ok((str, input.drop(expected.length())))
+    } else {
+      Err(ParseStringError(expected~))
+    }
+  })
+}
+
+///|
+fn is_digit(c : Char) -> Bool {
+  c >= '0' && c <= '9'
+}
+
+///|
+/// Matches digitsstring.
+/// Returns matched digit string automatically convert into specific number type by @strconv.
+pub fn digits[T : @strconv.FromStr]() -> Parser[T] {
+  return Parser(fn(input : CList) -> ParseResult[T] {
+    let digits = @string.from_array(input.take_while(is_digit).to_array())
+    if digits.length() == 0 {
+      return Err(ParseDigitError)
+    }
+    let parsed_number : Result[T, @strconv.StrConvError] = @strconv.parse?(
+      digits,
+    )
+    match parsed_number {
+      Ok(number) => Ok((number, input.drop(digits.length())))
+      Err(_) => Err(ParseDigitError)
     }
   })
 }
