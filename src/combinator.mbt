@@ -75,6 +75,22 @@ pub fn sequence[T1, T2](
   })
 }
 
+///| |
+/// Applies 3 parsers untile any parser fails.
+/// Returns tuple of the result of the parsers.
+pub fn sequence3[T1, T2, T3](
+  parser1 : Parser[T1],
+  parser2 : Parser[T2],
+  parser3 : Parser[T3]
+) -> Parser[(T1, T2, T3)] {
+  return Parser(fn(input : CList) -> ParseResult[(T1, T2, T3)] {
+    match parse(sequence(sequence(parser1, parser2), parser3), input)._ {
+      Ok((((p1, p2), p3), r1)) => Ok(((p1, p2, p3), r1))
+      Err(err) => Err(err)
+    }
+  })
+}
+
 ///|
 /// Applies **zero** or more occurrences of `parser` separated by `sep_by`.
 /// Returns a immutable list of the values returned by the `parser`.
@@ -138,6 +154,18 @@ pub fn precede[T, U](self : Parser[T], next_parser : Parser[U]) -> Parser[T] {
     match parse(sequence(self, next_parser), input)._ {
       Ok(((result, _), rest)) => Ok((result, rest))
       Err(err) => Err(err)
+    }
+  })
+}
+
+///|
+/// Tries to apply the parser. If it fails without consuming input, it returns the value `fallback_value`,
+/// otherwise the value returned by the parser
+pub fn option[T](fallback_value : T, parser : Parser[T]) -> Parser[T] {
+  return Parser(fn(input : CList) -> ParseResult[T] {
+    match parse(parser, input)._ {
+      Ok((result, rest)) => Ok((result, rest))
+      Err(_) => Ok((fallback_value, input))
     }
   })
 }

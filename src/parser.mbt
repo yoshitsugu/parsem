@@ -4,6 +4,7 @@ type! ParseError {
   ParseStringError(expected~ : String)
   ParseDigitError
   NonEmptyArrayIsRequiredError
+  ParseAnyCharError
   UnreachableError
 }
 
@@ -19,6 +20,7 @@ pub impl Show for ParseError with output(self : ParseError, logger : &Logger) ->
       logger.write_string(
         "Non empty array of parsers if required for choice combinator",
       )
+    ParseAnyCharError => logger.write_string("Parse Error: expected any char")
     UnreachableError =>
       logger.write_string("Unreachable Error. This occurs by parsem's bug.")
   }
@@ -121,6 +123,18 @@ pub fn digits[T : @strconv.FromStr]() -> Parser[T] {
     match parsed_number {
       Ok(number) => Ok((number, input.drop(digits.length())))
       Err(_) => Err(ParseDigitError)
+    }
+  })
+}
+
+///|
+/// Just consumes any character
+pub fn any_char() -> Parser[Char] {
+  return Parser(fn(input : CList) -> ParseResult[Char] {
+    if input.length() > 0 {
+      Ok((input.head().unwrap(), input.tail()))
+    } else {
+      Err(ParseAnyCharError)
     }
   })
 }

@@ -84,6 +84,17 @@ test "sequence" {
   )
 }
 
+test "sequence3" {
+  let result : @parsem.ParseResult[(Char, Char, Int)] = @parsem.parse(
+    @parsem.sequence3(@parsem.char('a'), @parsem.char('b'), @parsem.digits()),
+    "ab123cd",
+  )
+  inspect!(
+    result,
+    content="ParseResult(Ok((('a', 'b', 123), @list.of(['c', 'd']))))",
+  )
+}
+
 test "sep_by matches many" {
   let result = @parsem.parse(
     @parsem.sep_by(@parsem.digit(), @parsem.char(',')),
@@ -157,4 +168,15 @@ test "precede" {
     "abcd",
   )
   inspect!(result, content="ParseResult(Ok(('a', @list.of(['c', 'd']))))")
+}
+
+test "option" {
+  inspect!(
+    @parsem.parse(@parsem.option('z', @parsem.char('a')), "abc"),
+    content="ParseResult(Ok(('a', @list.of(['b', 'c']))))",
+  )
+  inspect!(
+    @parsem.parse(@parsem.option('z', @parsem.char('a')), "efg"),
+    content="ParseResult(Ok(('z', @list.of(['e', 'f', 'g']))))",
+  )
 }
