@@ -145,3 +145,16 @@ test "sep_by1 matches one" {
   assert_eq!(parsed.to_array(), ['1'])
   assert_eq!(rest.to_array(), ['a', 'b'])
 }
+
+test "then" {
+  let result = @parsem.parse(@parsem.char('a').then(@parsem.char('b')), "abcd")
+  inspect!(result, content="ParseResult(Ok(('b', @list.of(['c', 'd']))))")
+}
+
+test "precede" {
+  let result = @parsem.parse(
+    @parsem.char('a').precede(@parsem.char('b')),
+    "abcd",
+  )
+  inspect!(result, content="ParseResult(Ok(('a', @list.of(['c', 'd']))))")
+}
