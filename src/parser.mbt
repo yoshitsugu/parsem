@@ -51,6 +51,8 @@ pub fn parse[S : Parsable, T](parser : Parser[T], input : S) -> ParseResult[T] {
 }
 
 ///|
+/// Matches one character.
+/// Returns matched character.
 pub fn char(expected : Char) -> Parser[Char] {
   return Parser(fn(input : CList) -> ParseResult[Char] {
     match input.head() {
@@ -66,6 +68,8 @@ pub fn char(expected : Char) -> Parser[Char] {
 }
 
 ///|
+/// Matches one digit character.
+/// Returns matched character.
 pub fn digit() -> Parser[Char] {
   return Parser(fn(input : CList) -> ParseResult[Char] {
     match input.head() {

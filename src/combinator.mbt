@@ -55,3 +55,65 @@ pub fn choice[T](parsers : Array[Parser[T]]) -> Parser[T] {
     result
   })
 }
+
+///| |
+/// Applies 2 parsers untile any parser fails.
+/// Returns tuple of the result of the parsers.
+pub fn sequence[T1, T2](
+  parser1 : Parser[T1],
+  parser2 : Parser[T2]
+) -> Parser[(T1, T2)] {
+  return Parser(fn(input : CList) -> ParseResult[(T1, T2)] {
+    match parse(parser1, input)._ {
+      Ok((p1, r1)) =>
+        match parse(parser2, r1)._ {
+          Ok((p2, r2)) => Ok(((p1, p2), r2))
+          Err(err) => Err(err)
+        }
+      Err(err) => Err(err)
+    }
+  })
+}
+
+///|
+/// Applies **zero** or more occurrences of `parser` separated by `sep_by`.
+/// Returns a immutable list of the values returned by the `parser`.
+pub fn sep_by[T, U](
+  parser : Parser[T],
+  sep_by : Parser[U]
+) -> Parser[@immut/list.T[T]] {
+  return Parser(fn(input : CList) -> ParseResult[@immut/list.T[T]] {
+    match parse(sep_by1(parser, sep_by), input)._ {
+      Ok(_) as ok => ok
+      Err(_) => Ok((@immut/list.from_array([]), input))
+    }
+  })
+}
+
+///|
+/// Applies **one** or more occurrences of `parser` separated by `sep_by`.
+/// Returns a immutable list of the values returned by the `parser`.
+pub fn sep_by1[T, U](
+  parser : Parser[T],
+  sep_by : Parser[U]
+) -> Parser[@immut/list.T[T]] {
+  return Parser(fn(input : CList) -> ParseResult[@immut/list.T[T]] {
+    fn _sep_by(input_ : CList) -> (@immut/list.T[T], CList) {
+      match parse(sequence(sep_by, parser), input_) {
+        ParseResult(Ok(((_, parsed), rest))) => {
+          let (new_result, new_rest) = _sep_by(rest)
+          (@immut/list.from_array([parsed]).concat(new_result), new_rest)
+        }
+        ParseResult(Err(_)) => (@immut/list.from_array([]), input_)
+      }
+    }
+
+    match parse(parser, input)._ {
+      Ok((parsed, rest)) => {
+        let (new_parsed, new_rest) = _sep_by(rest)
+        Ok((@immut/list.from_array([parsed]).concat(new_parsed), new_rest))
+      }
+      Err(err) => Err(err)
+    }
+  })
+}
