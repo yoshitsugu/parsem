@@ -56,8 +56,8 @@ pub fn choice[T](parsers : Array[Parser[T]]) -> Parser[T] {
   })
 }
 
-///| |
-/// Applies 2 parsers untile any parser fails.
+///|
+/// Applies 2 parsers until any parser fails.
 /// Returns tuple of the result of the parsers.
 pub fn sequence[T1, T2](
   parser1 : Parser[T1],
@@ -76,7 +76,7 @@ pub fn sequence[T1, T2](
 }
 
 ///| |
-/// Applies 3 parsers untile any parser fails.
+/// Applies 3 parsers until any parser fails.
 /// Returns tuple of the result of the parsers.
 pub fn sequence3[T1, T2, T3](
   parser1 : Parser[T1],
@@ -172,10 +172,22 @@ pub fn option[T](fallback_value : T, parser : Parser[T]) -> Parser[T] {
 
 ///|
 /// Transforms the result of the parser using the provided function.
-pub fn map[T, U](parser : Parser[T], func : (T) -> U) -> Parser[U] {
+pub fn map[T, U](self : Parser[T], func : (T) -> U) -> Parser[U] {
   return Parser(fn(input : CList) -> ParseResult[U] {
-    match parse(parser, input)._ {
+    match parse(self, input)._ {
       Ok((result, rest)) => Ok((func(result), rest))
+      Err(err) => Err(err)
+    }
+  })
+}
+
+///|
+/// Chains parsers by applying a function to the result of the first parser
+/// to produce the next parser.
+pub fn bind[T, U](self : Parser[T], func : (T) -> Parser[U]) -> Parser[U] {
+  return Parser(fn(input : CList) -> ParseResult[U] {
+    match parse(self, input)._ {
+      Ok((result, rest)) => parse(func(result), rest)
       Err(err) => Err(err)
     }
   })
