@@ -180,3 +180,13 @@ test "option" {
     content="ParseResult(Ok(('z', @list.of(['e', 'f', 'g']))))",
   )
 }
+
+test "map" {
+  inspect!(
+    @parsem.parse(
+      @parsem.map(@parsem.char('a'), fn(c : Char) -> String { "\{c}\{c}" }),
+      "abc",
+    ),
+    content="ParseResult(Ok((\"aa\", @list.of(['b', 'c']))))",
+  )
+}

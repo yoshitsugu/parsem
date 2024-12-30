@@ -169,3 +169,14 @@ pub fn option[T](fallback_value : T, parser : Parser[T]) -> Parser[T] {
     }
   })
 }
+
+///|
+/// Transforms the result of the parser using the provided function.
+pub fn map[T, U](parser : Parser[T], func : (T) -> U) -> Parser[U] {
+  return Parser(fn(input : CList) -> ParseResult[U] {
+    match parse(parser, input)._ {
+      Ok((result, rest)) => Ok((func(result), rest))
+      Err(err) => Err(err)
+    }
+  })
+}
