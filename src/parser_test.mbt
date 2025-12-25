@@ -1,33 +1,33 @@
 test "char" {
-  inspect!(
+  inspect(
     @parsem.parse(@parsem.char('a'), "abc"),
-    content="ParseResult(Ok(('a', @list.of(['b', 'c']))))",
+    content="Ok(('a', @list.from_array(['b', 'c'])))",
   )
-  inspect!(
+  inspect(
     @parsem.parse(@parsem.char('a'), "bcd"),
-    content="ParseResult(Err(Parse Error: expected 'a'))",
+    content="Err(Parse Error: expected 'a')",
   )
 }
 
 test "string" {
-  inspect!(
+  inspect(
     @parsem.parse(@parsem.string("abc"), "abcde"),
-    content="ParseResult(Ok((\"abc\", @list.of(['d', 'e']))))",
+    content="Ok((\"abc\", @list.from_array(['d', 'e'])))",
   )
-  inspect!(
+  inspect(
     @parsem.parse(@parsem.string("abc"), "bcd"),
-    content="ParseResult(Err(Parse Error: expected \"abc\"))",
+    content="Err(Parse Error: expected \"abc\")",
   )
 }
 
 test "digit" {
-  inspect!(
+  inspect(
     @parsem.parse(@parsem.digit(), "123abc"),
-    content="ParseResult(Ok(('1', @list.of(['2', '3', 'a', 'b', 'c']))))",
+    content="Ok(('1', @list.from_array(['2', '3', 'a', 'b', 'c'])))",
   )
-  inspect!(
+  inspect(
     @parsem.parse(@parsem.digit(), "abc123"),
-    content="ParseResult(Err(Parse Error: expected digit))",
+    content="Err(Parse Error: expected digit)",
   )
 }
 
@@ -36,10 +36,10 @@ test "digits" {
     @parsem.digits(),
     "123abc",
   )
-  inspect!(result, content="ParseResult(Ok((123, @list.of(['a', 'b', 'c']))))")
+  inspect(result, content="Ok((123, @list.from_array(['a', 'b', 'c'])))")
   let result2 : @parsem.ParseResult[Int] = @parsem.parse(
     @parsem.digits(),
     "abc123",
   )
-  inspect!(result2, content="ParseResult(Err(Parse Error: expected digit))")
+  inspect(result2, content="Err(Parse Error: expected digit)")
 }

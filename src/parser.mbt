@@ -1,5 +1,5 @@
 ///|
-type! ParseError {
+pub suberror ParseError {
   ParseCharError(expected~ : Char)
   ParseStringError(expected~ : String)
   ParseDigitError
@@ -27,15 +27,18 @@ pub impl Show for ParseError with output(self : ParseError, logger : &Logger) ->
 }
 
 ///|
-pub(readonly) type ParseResult[T] Result[(T, @immut/list.T[Char]), ParseError] derive (
-  Show,
-)
+pub type CList = @list.List[Char]
 
 ///|
-pub(readonly) type Parser[T] (@immut/list.T[Char]) -> ParseResult[T] derive(Show)
+pub type ParseResult[T] = Result[(T, CList), ParseError]
 
 ///|
-typealias CList = @immut/list.T[Char]
+pub struct Parser[T]((CList) -> ParseResult[T]) derive(Show)
+
+///|
+pub fn[T] Parser::new(f : (CList) -> ParseResult[T]) -> Parser[T] {
+  Parser(f)
+}
 
 ///|
 trait Parsable {
@@ -44,15 +47,15 @@ trait Parsable {
 
 ///|
 pub impl Parsable for String with to_char_list(self : String) {
-  @immut/list.from_array(self.to_array())
+  @list.from_array(self.to_array())
 }
 
 ///|
 pub impl Parsable for CList with to_char_list(self : CList) { self }
 
 ///|
-pub fn parse[S : Parsable, T](parser : Parser[T], input : S) -> ParseResult[T] {
-  (parser._)(input.to_char_list())
+pub fn[S : Parsable, T] parse(parser : Parser[T], input : S) -> ParseResult[T] {
+  (parser.0)(input.to_char_list())
 }
 
 ///|
@@ -63,7 +66,7 @@ pub fn char(expected : Char) -> Parser[Char] {
     match input.head() {
       Some(c) =>
         if c == expected {
-          Ok((c, input.tail()))
+          Ok((c, input.unsafe_tail()))
         } else {
           Err(ParseCharError(expected~))
         }
@@ -80,7 +83,7 @@ pub fn digit() -> Parser[Char] {
     match input.head() {
       Some(c) =>
         if is_digit(c) {
-          Ok((c, input.tail()))
+          Ok((c, input.unsafe_tail()))
         } else {
           Err(ParseDigitError)
         }
@@ -94,7 +97,7 @@ pub fn digit() -> Parser[Char] {
 /// Returns matched string.
 pub fn string(expected : String) -> Parser[String] {
   return Parser(fn(input : CList) -> ParseResult[String] {
-    let str = @string.from_array(input.take(expected.length()).to_array())
+    let str = String::from_array(input.take(expected.length()).to_array())
     if str == expected {
       Ok((str, input.drop(expected.length())))
     } else {
@@ -111,15 +114,14 @@ fn is_digit(c : Char) -> Bool {
 ///|
 /// Matches digitsstring.
 /// Returns matched digit string automatically convert into specific number type by @strconv.
-pub fn digits[T : @strconv.FromStr]() -> Parser[T] {
+pub fn[T : @strconv.FromStr] digits() -> Parser[T] {
   return Parser(fn(input : CList) -> ParseResult[T] {
-    let digits = @string.from_array(input.take_while(is_digit).to_array())
+    let digits = String::from_array(input.take_while(is_digit).to_array())
     if digits.length() == 0 {
       return Err(ParseDigitError)
     }
-    let parsed_number : Result[T, @strconv.StrConvError] = @strconv.parse?(
-      digits,
-    )
+    let parsed_number : Result[T, @strconv.StrConvError] =
+      try? @strconv.from_str(digits)
     match parsed_number {
       Ok(number) => Ok((number, input.drop(digits.length())))
       Err(_) => Err(ParseDigitError)
@@ -132,7 +134,7 @@ pub fn digits[T : @strconv.FromStr]() -> Parser[T] {
 pub fn any_char() -> Parser[Char] {
   return Parser(fn(input : CList) -> ParseResult[Char] {
     if input.length() > 0 {
-      Ok((input.head().unwrap(), input.tail()))
+      Ok((input.head().unwrap(), input.unsafe_tail()))
     } else {
       Err(ParseAnyCharError)
     }
